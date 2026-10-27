@@ -1,0 +1,14 @@
+{
+  "name": "so-sanh-bao-gia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Công cụ so sánh báo giá nhà cung cấp, chạy offline trong trình duyệt",
+  "scripts": {
+    "build": "node build.js",
+    "test:parse": "node test/parse-test.js"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "pdfjs-dist": "3.11.174"
+  }
+}

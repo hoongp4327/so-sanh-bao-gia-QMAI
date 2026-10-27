@@ -1,0 +1,4 @@
+node_modules/
+# Không đưa báo giá thật (dữ liệu nội bộ) lên git
+*.pdf
+*.xlsx

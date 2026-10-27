@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>So sánh báo giá</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#fff; --ink:#1d2330; --muted:#667085; --line:#d9dde4; --line2:#eceef2;
+  --accent:#1f5fbf; --accent-ink:#fff; --ok:#1b7f45; --ok-bg:#e3f4ea; --warn:#9a5b00; --warn-bg:#fff4dc;
+  --bad:#b42318; --bad-bg:#fde8e7; --sel:#fff7c2; --head:#eef1f5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI",Roboto,Arial,sans-serif}
+header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:17px;margin:0 12px 0 0;font-weight:650}
+header .sp{flex:1}
+button{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:#b8bfca;background:#fafbfc}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{border-color:transparent;background:transparent;padding:2px 6px;color:var(--muted)}
+button.ghost:hover{background:var(--line2);color:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+main{padding:16px 20px 60px;max-width:100%}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+section.card h2{font-size:14px;margin:0 0 10px;font-weight:650;text-transform:uppercase;letter-spacing:.03em;color:#344054}
+#drop{border:2px dashed #b9c2d0;border-radius:10px;padding:22px;text-align:center;color:var(--muted);background:#fbfcfd;cursor:pointer;transition:.15s}
+#drop.over{border-color:var(--accent);background:#eef4ff;color:var(--accent)}
+#drop b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 14px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+label.f input,label.f textarea,label.f select{font:inherit;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff}
+label.f textarea{min-height:64px;resize:vertical}
+.wide{grid-column:1/-1}
+.sups{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.sup{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;position:relative}
+.sup.selected{border-color:#d4b200;background:#fffdf0}
+.sup .nm{font-weight:650;font-size:14px;padding-right:60px}
+.sup .meta{color:var(--muted);font-size:12px;word-break:break-all}
+.sup .tools{position:absolute;top:6px;right:6px}
+.badge{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;margin:4px 4px 0 0}
+.b-ok{background:var(--ok-bg);color:var(--ok)} .b-warn{background:var(--warn-bg);color:var(--warn)} .b-bad{background:var(--bad-bg);color:var(--bad)}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:72vh}
+table.cmp{border-collapse:separate;border-spacing:0;font-size:13px;min-width:100%}
+table.cmp th,table.cmp td{border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:3px 5px;background:#fff;vertical-align:middle}
+table.cmp thead th{background:var(--head);position:sticky;top:0;z-index:3;font-weight:600;font-size:12px;text-align:center}
+table.cmp thead tr:nth-child(2) th{top:var(--h1,34px)}
+table.cmp .stick{position:sticky;z-index:2}
+table.cmp thead .stick{z-index:4}
+table.cmp .c0{left:0;width:54px;min-width:54px}
+table.cmp .c1{left:54px;min-width:260px;width:300px}
+table.cmp .c2{left:354px;width:60px;min-width:60px}
+table.cmp .c3{left:414px;width:62px;min-width:62px;border-right:2px solid var(--line)}
+table.cmp th.sg{border-left:2px solid var(--line)}
+table.cmp td.sg{border-left:2px solid var(--line)}
+table.cmp input{font:inherit;border:1px solid transparent;background:transparent;width:100%;padding:3px 4px;border-radius:4px;color:inherit}
+table.cmp input:hover{border-color:var(--line)}
+table.cmp input:focus{border-color:var(--accent);background:#fff;outline:none}
+table.cmp input.num{text-align:right}
+table.cmp td.price{min-width:112px}
+table.cmp td.vat{width:52px;min-width:52px}
+table.cmp td.vat input{text-align:center}
+table.cmp td.amt{min-width:120px;text-align:right;color:#344054;padding-right:8px}
+td.best,td.best input{background:var(--ok-bg)!important;color:var(--ok);font-weight:600}
+td.empty{background:#fafafa}
+td.qdiff input{color:var(--bad);font-weight:600}
+tr.tot td{background:#f7f8fa;font-weight:650}
+tr.tot td.best{background:var(--ok-bg)!important}
+tr.term td{font-size:12px;color:#344054}
+tr.term td input{font-size:12px}
+.rowtools{white-space:nowrap;display:flex;align-items:center;gap:0}
+.rowtools span{min-width:20px;text-align:right;color:var(--muted);font-size:12px;margin-right:2px}
+th.selhd{background:var(--sel)!important}
+.summary{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:170px}
+.kpi .k{font-size:12px;color:var(--muted)} .kpi .v{font-size:19px;font-weight:650}
+.hint{color:var(--muted);font-size:12.5px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d2330;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw}
+.toast.on{opacity:1}
+.loading{display:none;color:var(--accent);font-weight:600}
+.loading.on{display:inline}
+details.help{font-size:13px;color:#344054}
+details.help summary{cursor:pointer;color:var(--accent)}
+@media print{header,#drop,.rowtools button{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>So sánh báo giá</h1>
+  <button class="primary" id="btnAdd">+ Thêm báo giá (PDF / Excel)</button>
+  <button id="btnManual">+ NCC nhập tay</button>
+  <span class="loading" id="loading">Đang đọc file…</span>
+  <span class="sp"></span>
+  <button id="btnReset">Làm phiên mới</button>
+  <button class="primary" id="btnExport">⤓ Xuất Excel</button>
+  <input type="file" id="file" accept=".pdf,.xlsx" multiple hidden>
+</header>
+<main>
+  <section class="card">
+    <div id="drop"><b>Kéo thả file báo giá vào đây</b> (PDF hoặc Excel .xlsx, tối đa 8 NCC)<br>hoặc bấm để chọn file. File chỉ được đọc trên máy này, không gửi đi đâu.</div>
+    <details class="help" style="margin-top:8px"><summary>Cách dùng</summary>
+      <ol style="margin:6px 0 0;padding-left:20px">
+        <li>Thêm báo giá của từng NCC. App tự đọc các dòng hàng và ghép những hạng mục giống nhau vào cùng một dòng.</li>
+        <li>Kiểm tra bảng: ô <span class="badge b-ok">xanh</span> là đơn giá rẻ nhất của dòng; chữ đỏ ở SL nghĩa là NCC báo số lượng khác. Mọi ô đều sửa được.</li>
+        <li>Mỗi thẻ NCC có ô đối chiếu "Tổng tính được" với tổng in trên báo giá. Có dấu ✓ là app đọc khớp.</li>
+        <li>PDF dạng ảnh scan thì app không đọc được: bấm "+ NCC nhập tay" rồi gõ đơn giá.</li>
+        <li>Dòng bị tách sai thì dùng nút ⤒ để gộp vào dòng phía trên.</li>
+        <li>Dữ liệu tự lưu trong trình duyệt. Bấm "Làm phiên mới" để bắt đầu lần so sánh khác.</li>
+      </ol>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>Thông tin chung</h2>
+    <div class="grid" id="info"></div>
+  </section>
+
+  <section class="card" id="supCard" hidden>
+    <h2>Nhà cung cấp</h2>
+    <div class="sups" id="sups"></div>
+  </section>
+
+  <section class="card" id="cmpCard" hidden>
+    <h2>Bảng so sánh đơn giá</h2>
+    <div class="tablewrap"><table class="cmp" id="cmp"></table></div>
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+      <button id="btnRow">+ Thêm dòng</button>
+      <span class="hint">Đơn giá nhập chưa VAT (trừ NCC có đánh dấu "giá đã gồm VAT"). Thành tiền = SL × đơn giá × (1 + VAT).</span>
+    </div>
+  </section>
+
+  <section class="card" id="conCard" hidden>
+    <h2>Kết luận</h2>
+    <div class="summary" id="summary"></div>
+    <div class="grid" style="margin-top:12px">
+      <label class="f wide">Nhận xét / Đề xuất (Comment)
+        <textarea id="comment" rows="3"></textarea>
+      </label>
+    </div>
+    <button id="btnAutoComment" style="margin-top:8px">Tạo nhận xét tự động</button>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>/*LIB_PDF*/</script>
+<script>/*LIB_PDF_WORKER*/</script>
+<script>/*LIB_EXCEL*/</script>
+<script>/*PARSER*/</script>
+<script>
+(function(){
+'use strict';
+const MAX_SUP = 8;
+const STORE = 'so-sanh-bao-gia-v1';
+const $ = s => document.querySelector(s);
+const fmt = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '' : Math.round(n).toLocaleString('en-US');
+const fmtPct = n => isFinite(n) ? (n * 100).toFixed(1) + '%' : '';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function num(v){ if (typeof v === 'number') return v; const n = QuoteParser.parseNumber(String(v || '').trim()); return n; }
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms || 3200); }
+
+const INFO_FIELDS = [
+  ['project','Project (Dự án)'], ['requester','Requester'], ['rfq','RFQ'], ['department','Department'],
+  ['execDate','Execution Date'], ['bus','Bus'], ['goods','Hàng hóa (tên gói mua)'], ['goodsQty','Số lượng (gói)'], ['goodsUnit','ĐVT (gói)'],
+];
+const TERMS = [['quote','Số / ngày báo giá'], ['payment','Thanh toán'], ['delivery','Thời gian giao hàng / thi công'], ['validity','Hiệu lực báo giá'], ['warranty','Bảo hành'], ['vatText','VAT']];
+
+function blank(){ return { info:{ project:'', requester:'', rfq:'', department:'', execDate:'', bus:'GCP North', goods:'', goodsQty:'1', goodsUnit:'gói', comment:'', selected:'auto' }, sups:[], rows:[] }; }
+let S = blank();
+try { const raw = localStorage.getItem(STORE); if (raw) S = Object.assign(blank(), JSON.parse(raw)); } catch(e) {}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e) {} }
+
+// ---------- tính toán ----------
+function cellPre(si, c){ if (!c || c.price === null || c.price === '' || c.price === undefined) return null; const v = (c.vat ?? S.sups[si].vat) / 100; return S.sups[si].inclVat ? c.price / (1 + v) : c.price; }
+function cellAmt(si, row){ const c = row.cells[si]; const p = cellPre(si, c); if (p === null) return null; const v = (c.vat ?? S.sups[si].vat) / 100; return p * (num(row.qty) || 0) * (1 + v); }
+function totals(){
+  return S.sups.map((s, si) => {
+    let pre = 0, inc = 0, missing = 0;
+    S.rows.forEach(r => { const c = r.cells[si]; const p = cellPre(si, c); if (p === null) { missing++; return; } pre += p * (num(r.qty) || 0); inc += cellAmt(si, r); });
+    return { pre, vat: inc - pre, inc, missing };
+  });
+}
+function selectedIndex(T){
+  if (!S.sups.length) return -1;
+  if (S.info.selected !== 'auto' && S.sups[+S.info.selected]) return +S.info.selected;
+  let best = -1; T.forEach((t, i) => { if (t.inc > 0 && (best < 0 || t.inc < T[best].inc)) best = i; }); return best;
+}
+
+// ---------- đọc file ----------
+async function pdfPages(buf){
+  const doc = await pdfjsLib.getDocument({ data: buf, disableFontFace: true, isEvalSupported: false }).promise;
+  const pages = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    pages.push({ items: tc.items.map(i => ({ str: i.str, x: i.transform[4], y: i.transform[5], w: i.width, h: i.height || Math.abs(i.transform[3]) })) });
+  }
+  return pages;
+}
+// Excel -> giả lập text có toạ độ để dùng chung bộ đọc
+async function xlsxPages(buf){
+  const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf);
+  const pages = [];
+  wb.eachSheet(ws => {
+    const items = [];
+    ws.eachRow({ includeEmpty: false }, (row, r) => {
+      row.eachCell({ includeEmpty: false }, (cell, c) => {
+        if (cell.isMerged && cell.master !== cell) return;
+        let v = cell.value; if (v && typeof v === 'object') v = v.result ?? v.text ?? (v.richText ? v.richText.map(t => t.text).join('') : '');
+        if (v === null || v === undefined || v === '') return;
+        let str = typeof v === 'number' ? (Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100)) : String(v);
+        if (typeof v === 'number' && cell.numFmt && cell.numFmt.includes('%')) str = Math.round(v * 1000) / 10 + '%';
+        str.split(/\r?\n/).forEach((part, k) => { if (part.trim()) items.push({ str: part, x: c * 100, y: -(r * 30 + k * 8), w: 90, h: 8 }); });
+      });
+    });
+    if (items.length) pages.push({ items });
+  });
+  return pages;
+}
+
+async function addFiles(files){
+  files = [...files].filter(f => /\.(pdf|xlsx)$/i.test(f.name));
+  if (!files.length) { toast('Chỉ nhận file .pdf hoặc .xlsx'); return; }
+  $('#loading').classList.add('on');
+  for (const f of files) {
+    if (S.sups.length >= MAX_SUP) { toast('Tối đa ' + MAX_SUP + ' NCC mỗi lần so sánh'); break; }
+    try {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      const pages = /\.pdf$/i.test(f.name) ? await pdfPages(buf) : await xlsxPages(buf.buffer);
+      const q = QuoteParser.parseQuote(pages);
+      addSupplier(q, f.name);
+      toast('Đã đọc ' + f.name + ': ' + q.items.length + ' dòng');
+    } catch (e) { console.error(e); toast('Không đọc được ' + f.name + ': ' + e.message, 6000); }
+  }
+  $('#loading').classList.remove('on');
+  save(); render();
+}
+
+function addSupplier(q, fileName){
+  const si = S.sups.length;
+  S.sups.push({
+    name: q.supplier || fileName.replace(/\.(pdf|xlsx)$/i, ''), full: q.supplierFull || '', file: fileName,
+    vat: q.vatRate ?? 8, inclVat: !!q.pricesIncludeVat, vatNote: q.vatNote || '', warnings: q.warnings || [], pdfTotals: q.pdfTotals || [],
+    terms: { quote: [q.quoteNo, q.quoteDate].filter(Boolean).join(' / '), payment: q.terms?.payment || '', delivery: q.terms?.delivery || '', validity: q.terms?.validity || '', warranty: q.terms?.warranty || '', vatText: q.vatNote && !/tạm tính/.test(q.vatNote) ? (new Set(q.items.map(i => i.vat).filter(v => v !== null)).size > 1 ? [...new Set(q.items.map(i => i.vat).filter(v => v !== null))].map(v => v + '%').join(' / ') : (q.vatRate + '%')) : 'Không nêu - tạm tính ' + (q.vatRate ?? 8) + '%' },
+  });
+  S.rows.forEach(r => r.cells.push(null));
+  // ghép vào các dòng hiện có
+  const items = q.items;
+  const pairs = [];
+  items.forEach((it, k) => S.rows.forEach((r, ri) => {
+    let s = QuoteParser.similarity(it.name, r.name);
+    if (s >= 0.55) { s -= Math.abs(k / Math.max(1, items.length) - ri / Math.max(1, S.rows.length)) * 0.05; pairs.push({ k, ri, s }); }
+  }));
+  pairs.sort((a, b) => b.s - a.s);
+  const usedK = new Set(), usedR = new Set(), assign = new Map();
+  for (const p of pairs) { if (usedK.has(p.k) || usedR.has(p.ri)) continue; usedK.add(p.k); usedR.add(p.ri); assign.set(p.k, p.ri); }
+  const rowObjs = S.rows.slice();
+  let lastPos = -1;
+  items.forEach((it, k) => {
+    const cell = { price: it.price, vat: it.vat, qty: it.qty, unit: it.unit, src: it.name, check: it.check };
+    if (assign.has(k)) { const r = rowObjs[assign.get(k)]; r.cells[si] = cell; lastPos = S.rows.indexOf(r); return; }
+    const cells = S.sups.map(() => null); cells[si] = cell;
+    S.rows.splice(lastPos + 1, 0, { name: it.name, unit: it.unit || '', qty: it.qty, cells });
+    lastPos++;
+  });
+}
+
+function addManual(){
+  if (S.sups.length >= MAX_SUP) { toast('Tối đa ' + MAX_SUP + ' NCC'); return; }
+  S.sups.push({ name: 'NCC ' + (S.sups.length + 1), full: '', file: '(nhập tay)', vat: 8, inclVat: false, vatNote: '', warnings: [], pdfTotals: [], terms: { quote: '', payment: '', delivery: '', validity: '', warranty: '', vatText: '8%' } });
+  S.rows.forEach(r => r.cells.push(null));
+  save(); render();
+}
+
+// ---------- giao diện ----------
+function renderInfo(){
+  $('#info').innerHTML = INFO_FIELDS.map(([k, l]) => `<label class="f">${l}<input data-info="${k}" value="${esc(S.info[k])}"></label>`).join('');
+  $('#comment').value = S.info.comment || '';
+}
+
+function render(){
+  const has = S.sups.length > 0;
+  $('#supCard').hidden = !has; $('#cmpCard').hidden = !has; $('#conCard').hidden = !has;
+  renderSups(); renderTable(); renderSummary();
+}
+
+function renderSups(){
+  const T = totals(), sel = selectedIndex(T);
+  $('#sups').innerHTML = S.sups.map((s, si) => {
+    const t = T[si];
+    const match = s.pdfTotals.find(p => Math.abs(p.value - t.pre) <= 2 || Math.abs(p.value - t.inc) <= 2);
+    const badges = [];
+    if (s.pdfTotals.length) badges.push(match ? `<span class="badge b-ok">✓ Khớp tổng trên báo giá: ${fmt(match.value)}</span>` : `<span class="badge b-bad">✗ Không khớp tổng trên báo giá (${s.pdfTotals.map(p => fmt(p.value)).join(', ')})</span>`);
+    if (t.missing) badges.push(`<span class="badge b-warn">${t.missing} dòng không có giá</span>`);
+    s.warnings.forEach(w => badges.push(`<span class="badge b-warn">${esc(w)}</span>`));
+    return `<div class="sup ${si === sel ? 'selected' : ''}">
+      <div class="tools">
+        <button class="ghost" data-act="supLeft" data-si="${si}" title="Chuyển sang trái" ${si === 0 ? 'disabled' : ''}>◀</button>
+        <button class="ghost" data-act="supRight" data-si="${si}" title="Chuyển sang phải" ${si === S.sups.length - 1 ? 'disabled' : ''}>▶</button>
+        <button class="ghost" data-act="supDel" data-si="${si}" title="Xoá NCC">✕</button>
+      </div>
+      <div class="nm">${si === sel ? '★ ' : ''}${esc(s.name)}</div>
+      <div class="meta" title="${esc(s.full)}">${esc(s.file)}</div>
+      <div style="margin-top:6px">Tổng chưa VAT: <b>${fmt(t.pre)}</b> · Sau VAT: <b>${fmt(t.inc)}</b></div>
+      <div>${badges.join('')}</div>
+      ${s.warnings.includes(s.vatNote) ? '' : `<div class="meta" style="margin-top:4px">${esc(s.vatNote)}</div>`}
+    </div>`;
+  }).join('');
+}
+
+function renderTable(){
+  const T = totals(), sel = selectedIndex(T);
+  const n = S.sups.length;
+  let h = '<thead><tr><th class="stick c0" rowspan="2">STT</th><th class="stick c1" rowspan="2">Hàng hóa</th><th class="stick c2" rowspan="2">SL</th><th class="stick c3" rowspan="2">ĐVT</th>';
+  S.sups.forEach((s, si) => {
+    h += `<th class="sg ${si === sel ? 'selhd' : ''}" colspan="3"><input data-sup="${si}" data-k="name" value="${esc(s.name)}" style="font-weight:650;text-align:center"></th>`;
+  });
+  h += '</tr><tr>';
+  S.sups.forEach((s, si) => {
+    h += `<th class="sg ${si === sel ? 'selhd' : ''}">Đơn giá ${s.inclVat ? '<u>đã gồm</u>' : 'chưa'} VAT<br><label style="font-weight:400;font-size:11px"><input type="checkbox" data-sup="${si}" data-k="inclVat" ${s.inclVat ? 'checked' : ''} style="width:auto"> giá đã gồm VAT</label></th>
+      <th class="${si === sel ? 'selhd' : ''}">VAT %<br><input class="num" data-sup="${si}" data-k="vat" value="${s.vat}" title="VAT mặc định của NCC (dòng trống VAT sẽ dùng giá trị này)" style="text-align:center;width:44px;background:#fff;border-color:var(--line)"></th>
+      <th class="${si === sel ? 'selhd' : ''}">Thành tiền<br>(gồm VAT)</th>`;
+  });
+  h += '</tr></thead><tbody>';
+  S.rows.forEach((r, ri) => {
+    const pres = S.sups.map((_, si) => cellPre(si, r.cells[si]));
+    const valid = pres.filter(p => p !== null && p > 0);
+    const min = valid.length > 1 ? Math.min(...valid) : null;
+    h += `<tr><td class="stick c0"><div class="rowtools"><span>${ri + 1}</span><button class="ghost" data-act="rowMenu" data-ri="${ri}" title="Thao tác dòng">⋮</button></div></td>
+      <td class="stick c1"><input data-row="${ri}" data-k="name" value="${esc(r.name)}" title="${esc(r.cells.filter(Boolean).map(c => c.src).join(' | '))}"></td>
+      <td class="stick c2"><input class="num" data-row="${ri}" data-k="qty" value="${esc(r.qty)}"></td>
+      <td class="stick c3"><input data-row="${ri}" data-k="unit" value="${esc(r.unit)}"></td>`;
+    S.sups.forEach((s, si) => {
+      const c = r.cells[si];
+      const best = min !== null && pres[si] !== null && Math.abs(pres[si] - min) < 0.5;
+      const qd = c && c.qty !== undefined && c.qty !== null && num(r.qty) !== c.qty;
+      h += `<td class="sg price ${best ? 'best' : ''} ${c ? '' : 'empty'} ${qd ? 'qdiff' : ''}" ${qd ? `title="NCC báo SL ${c.qty}"` : (c && c.check === false ? 'title="SL × đơn giá không khớp thành tiền trong báo giá - kiểm tra lại"' : '')}><input class="num" data-cell="${ri},${si}" data-k="price" value="${c ? fmt(c.price) : ''}" placeholder="—" ${c && c.check === false ? 'style="color:var(--warn)"' : ''}></td>
+        <td class="vat ${c ? '' : 'empty'}"><input class="num" data-cell="${ri},${si}" data-k="vat" value="${c && c.vat !== null && c.vat !== undefined ? c.vat : ''}" placeholder="${s.vat}"></td>
+        <td class="amt ${c ? '' : 'empty'}" data-amt="${ri},${si}">${fmt(cellAmt(si, r))}</td>`;
+    });
+    h += '</tr>';
+  });
+  // tổng
+  const rowsTot = [['TỔNG TIỀN CHƯA VAT (VND)', 'pre'], ['THUẾ VAT (VND)', 'vat'], ['TỔNG TIỀN ĐÃ GỒM VAT (VND)', 'inc']];
+  const minInc = Math.min(...T.filter(t => t.inc > 0).map(t => t.inc));
+  rowsTot.forEach(([l, k]) => {
+    h += `<tr class="tot"><td class="stick c0"></td><td class="stick c1" colspan="1">${l}</td><td class="stick c2"></td><td class="stick c3"></td>`;
+    T.forEach((t, si) => { h += `<td class="sg ${k === 'inc' && t.inc === minInc && n > 1 ? 'best' : ''}" colspan="3" style="text-align:right;padding-right:8px" data-tot="${k},${si}">${fmt(t[k])}</td>`; });
+    h += '</tr>';
+  });
+  TERMS.forEach(([k, l]) => {
+    h += `<tr class="term"><td class="stick c0"></td><td class="stick c1">${l}</td><td class="stick c2"></td><td class="stick c3"></td>`;
+    S.sups.forEach((s, si) => { h += `<td class="sg" colspan="3"><input data-term="${si}" data-k="${k}" value="${esc(s.terms[k])}" title="${esc(s.terms[k])}"></td>`; });
+    h += '</tr>';
+  });
+  h += '</tbody>';
+  $('#cmp').innerHTML = h;
+  const r1 = $('#cmp thead tr'); if (r1) $('#cmp').style.setProperty('--h1', r1.getBoundingClientRect().height + 'px');
+}
+
+function renderSummary(){
+  const T = totals(), sel = selectedIndex(T);
+  if (sel < 0) { $('#summary').innerHTML = ''; return; }
+  const max = Math.max(...T.map(t => t.inc));
+  const saving = max > 0 ? (max - T[sel].inc) / max : 0;
+  $('#summary').innerHTML = `
+    <label class="f">NCC được chọn
+      <select id="selSup"><option value="auto" ${S.info.selected === 'auto' ? 'selected' : ''}>Tự động (rẻ nhất)</option>
+      ${S.sups.map((s, si) => `<option value="${si}" ${String(S.info.selected) === String(si) ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>
+    <div class="kpi"><div class="k">NCC được chọn</div><div class="v">${esc(S.sups[sel].name)}</div></div>
+    <div class="kpi"><div class="k">Selected Amount (gồm VAT)</div><div class="v">${fmt(T[sel].inc)}</div></div>
+    <div class="kpi"><div class="k">Saving so với giá cao nhất</div><div class="v">${fmtPct(saving)}</div></div>`;
+}
+
+function liveUpdate(){
+  // cập nhật số mà không vẽ lại (giữ con trỏ trong ô đang gõ)
+  document.querySelectorAll('[data-amt]').forEach(td => { const [ri, si] = td.dataset.amt.split(',').map(Number); td.textContent = fmt(cellAmt(si, S.rows[ri])); });
+  const T = totals();
+  document.querySelectorAll('[data-tot]').forEach(td => { const [k, si] = td.dataset.tot.split(','); td.textContent = fmt(T[+si][k]); });
+}
+
+function autoComment(){
+  const T = totals(), sel = selectedIndex(T);
+  if (sel < 0) return;
+  const order = T.map((t, i) => ({ i, inc: t.inc })).filter(x => x.inc > 0).sort((a, b) => a.inc - b.inc);
+  const max = order[order.length - 1];
+  const s = S.sups[sel];
+  let txt = `Đã nhận ${S.sups.length} báo giá: ` + order.map(o => `${S.sups[o.i].name} ${fmt(o.inc)}`).join('; ') + ' (VND, đã gồm VAT). ';
+  if (order[0] && order[0].i === sel) txt += `NCC ${s.name} báo giá thấp nhất, thấp hơn ${fmtPct((max.inc - T[sel].inc) / max.inc)} so với giá cao nhất (${S.sups[max.i].name}). `;
+  else txt += `NCC ${s.name} không phải giá thấp nhất (thấp nhất: ${S.sups[order[0].i].name}). `;
+  if (s.terms.payment) txt += `Thanh toán: ${s.terms.payment.replace(/[.\s]+$/, '')}. `;
+  const warn = S.sups.filter(x => /tạm tính/.test(x.terms.vatText)).map(x => x.name);
+  if (warn.length) txt += `Lưu ý: báo giá ${warn.join(', ')} chưa nêu thuế suất VAT (tạm tính), cần xác nhận. `;
+  txt += `\n=> Recommendation: Mua từ NCC ${s.name}`;
+  S.info.comment = txt; $('#comment').value = txt; save();
+}
+
+// ---------- sự kiện ----------
+document.addEventListener('input', e => {
+  const el = e.target, d = el.dataset;
+  if (d.info) { S.info[d.info] = el.value; save(); return; }
+  if (el.id === 'comment') { S.info.comment = el.value; save(); return; }
+  if (d.row !== undefined) { S.rows[+d.row][d.k] = el.value; if (d.k === 'qty') liveUpdate(); save(); return; }
+  if (d.cell !== undefined) {
+    const [ri, si] = d.cell.split(',').map(Number);
+    const row = S.rows[ri];
+    const v = el.value.trim();
+    if (!row.cells[si]) row.cells[si] = { price: null, vat: null };
+    if (d.k === 'price') row.cells[si].price = v === '' ? null : num(v.replace(/\s/g, ''));
+    if (d.k === 'vat') row.cells[si].vat = v === '' ? null : parseFloat(v.replace(',', '.').replace('%', ''));
+    if (row.cells[si].price === null && row.cells[si].vat === null && d.k === 'price' && v === '') row.cells[si] = null;
+    liveUpdate(); save(); return;
+  }
+  if (d.term !== undefined) { S.sups[+d.term].terms[d.k] = el.value; save(); return; }
+  if (d.sup !== undefined && d.k === 'name') { S.sups[+d.sup].name = el.value; save(); return; }
+});
+document.addEventListener('change', e => {
+  const el = e.target, d = el.dataset;
+  if (el.id === 'selSup') { S.info.selected = el.value; save(); render(); return; }
+  if (d.sup !== undefined) {
+    const s = S.sups[+d.sup];
+    if (d.k === 'inclVat') s.inclVat = el.checked;
+    if (d.k === 'vat') { const v = parseFloat(el.value.replace(',', '.')); if (!isNaN(v)) s.vat = v; }
+    save(); render(); return;
+  }
+  if (d.cell !== undefined || (d.row !== undefined && d.k === 'qty')) { save(); render(); }
+  if (d.row !== undefined && d.k === 'name') renderSups();
+});
+
+function rowMenu(ri, btn){
+  document.querySelectorAll('.rowmenu').forEach(m => m.remove());
+  const m = document.createElement('div');
+  m.className = 'rowmenu';
+  m.style.cssText = 'position:absolute;z-index:40;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);padding:4px;display:flex;flex-direction:column;min-width:200px';
+  const items = [['up', '↑ Chuyển lên'], ['down', '↓ Chuyển xuống'], ['merge', '⤒ Gộp vào dòng phía trên'], ['insert', '+ Chèn dòng trống bên dưới'], ['del', '✕ Xoá dòng']];
+  m.innerHTML = items.map(([a, l]) => `<button class="ghost" style="text-align:left;padding:6px 10px" data-ract="${a}">${l}</button>`).join('');
+  const r = btn.getBoundingClientRect();
+  m.style.left = (r.left + window.scrollX) + 'px'; m.style.top = (r.bottom + window.scrollY + 2) + 'px';
+  document.body.appendChild(m);
+  m.addEventListener('click', ev => {
+    const a = ev.target.dataset.ract; if (!a) return;
+    const rows = S.rows;
+    if (a === 'up' && ri > 0) [rows[ri - 1], rows[ri]] = [rows[ri], rows[ri - 1]];
+    if (a === 'down' && ri < rows.length - 1) [rows[ri + 1], rows[ri]] = [rows[ri], rows[ri + 1]];
+    if (a === 'merge' && ri > 0) {
+      const above = rows[ri - 1], cur = rows[ri];
+      const clash = cur.cells.some((c, si) => c && above.cells[si]);
+      if (clash && !confirm('Cả hai dòng đều có giá của cùng NCC. Giá của dòng dưới sẽ ghi đè. Tiếp tục?')) return;
+      cur.cells.forEach((c, si) => { if (c) above.cells[si] = c; });
+      rows.splice(ri, 1);
+    }
+    if (a === 'insert') rows.splice(ri + 1, 0, { name: '', unit: '', qty: 1, cells: S.sups.map(() => null) });
+    if (a === 'del' && confirm('Xoá dòng "' + rows[ri].name + '"?')) rows.splice(ri, 1);
+    m.remove(); save(); render();
+  });
+  setTimeout(() => document.addEventListener('click', function off(ev){ if (!m.contains(ev.target)) { m.remove(); document.removeEventListener('click', off); } }), 0);
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const si = +b.dataset.si;
+  if (b.dataset.act === 'rowMenu') { rowMenu(+b.dataset.ri, b); return; }
+  if (b.dataset.act === 'supDel') {
+    if (!confirm('Xoá NCC "' + S.sups[si].name + '" khỏi bảng so sánh?')) return;
+    S.sups.splice(si, 1); S.rows.forEach(r => r.cells.splice(si, 1));
+    S.rows = S.rows.filter(r => r.cells.some(Boolean) || !S.sups.length ? r.cells.some(Boolean) : false);
+    S.info.selected = 'auto';
+  }
+  const swap = (a, c) => { [S.sups[a], S.sups[c]] = [S.sups[c], S.sups[a]]; S.rows.forEach(r => [r.cells[a], r.cells[c]] = [r.cells[c], r.cells[a]]); if (S.info.selected !== 'auto') S.info.selected = 'auto'; };
+  if (b.dataset.act === 'supLeft' && si > 0) swap(si, si - 1);
+  if (b.dataset.act === 'supRight' && si < S.sups.length - 1) swap(si, si + 1);
+  save(); render();
+});
+
+$('#btnAdd').onclick = () => $('#file').click();
+$('#drop').onclick = () => $('#file').click();
+$('#file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || !e.relatedTarget) drop.classList.remove('over'); }));
+document.addEventListener('drop', e => { if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+$('#btnManual').onclick = addManual;
+$('#btnRow').onclick = () => { S.rows.push({ name: '', unit: '', qty: 1, cells: S.sups.map(() => null) }); save(); render(); };
+$('#btnReset').onclick = () => { if (!confirm('Xoá toàn bộ dữ liệu hiện tại để bắt đầu lần so sánh mới?')) return; const keep = { requester: S.info.requester, department: S.info.department, bus: S.info.bus }; S = blank(); Object.assign(S.info, keep); save(); renderInfo(); render(); };
+$('#btnAutoComment').onclick = autoComment;
+$('#btnExport').onclick = () => exportXlsx().catch(e => { console.error(e); toast('Lỗi xuất Excel: ' + e.message, 6000); });
+
+// ---------- xuất Excel theo mẫu Price Comparison ----------
+async function exportXlsx(){
+  if (!S.sups.length) { toast('Chưa có NCC nào'); return; }
+  const T = totals(), sel = selectedIndex(T);
+  const n = S.sups.length;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Table 1', { pageSetup: { orientation: n > 3 ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+  const F = { name: 'Calibri', size: 10 };
+  const thin = { style: 'thin', color: { argb: 'FF000000' } };
+  const box = { top: thin, left: thin, bottom: thin, right: thin };
+  const NUM = '_(* #,##0_);_(* \\(#,##0\\);_(* "-"??_);_(@_)';
+  const colL = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }; // 0 -> A
+  const supCol = si => [colL(4 + si * 2), colL(5 + si * 2)];
+  const lastCol = colL(Math.max(7, 3 + n * 2));
+  ws.columns = [{ width: 6.6 }, { width: 40 }, { width: 6.6 }, { width: 7 }, ...S.sups.flatMap(() => [{ width: 17 }, { width: 18 }])];
+  if (n < 2) ws.getColumn(7).width = 18, ws.getColumn(8).width = 18;
+  const set = (addr, v, st) => { const c = ws.getCell(addr); c.value = v; c.font = Object.assign({}, F, st && st.font); if (st) { if (st.fill) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: st.fill } }; if (st.border) c.border = box; if (st.fmt) c.numFmt = st.fmt; c.alignment = Object.assign({ vertical: 'middle', wrapText: true }, st.align); } return c; };
+  const I = S.info;
+  // Dòng 1-2
+  ws.mergeCells('A1:E1');
+  set('A1', `PRICE COMPARISION & SUPPLIER APPROVAL\nProject:                ${I.project}\nRequester: ${I.requester}\nRFQ:     ${I.rfq}`, { align: { horizontal: 'left' } });
+  ws.mergeCells(`F1:${lastCol}1`);
+  set('F1', `Department: ${I.department}\nExecution Date  ${I.execDate}\nBus:   ${I.bus}`, { align: { horizontal: 'left' } });
+  ws.getRow(1).height = 62;
+  ws.mergeCells(`A2:${lastCol}2`);
+  set('A2', 'CONCLUSION\nProposal', { font: { bold: true, color: { argb: 'FFFF0000' } }, align: { horizontal: 'left' } });
+  ws.getRow(2).height = 26;
+  // Dòng 3-4: kết luận
+  const H3 = { font: { bold: true }, fill: 'FFE7E6E6', border: 1, align: { horizontal: 'center' } };
+  ws.mergeCells('A3:B3'); set('A3', 'Hàng hóa', H3); set('C3', 'Số lượng', H3); set('D3', 'ĐVT', H3);
+  ws.mergeCells('E3:F3'); set('E3', 'NCC được chọn', H3); set('G3', 'Selected Amount', H3); set('H3', 'Saving so với giá cao nhất (%)', H3);
+  ws.getRow(3).height = 28;
+  const first = 8, last = first + S.rows.length - 1;
+  const rPre = last + 1, rVat = last + 2, rInc = last + 3;
+  const incCells = S.sups.map((_, si) => supCol(si)[0] + rInc);
+  const B4 = { border: 1, align: { horizontal: 'center' } };
+  ws.mergeCells('A4:B4'); set('A4', I.goods || '', B4);
+  set('C4', num(I.goodsQty) ?? I.goodsQty, B4); set('D4', I.goodsUnit, B4);
+  ws.mergeCells('E4:F4'); set('E4', sel >= 0 ? S.sups[sel].name : '', B4);
+  const maxInc = Math.max(...T.map(t => t.inc));
+  set('G4', sel >= 0 ? { formula: incCells[sel], result: Math.round(T[sel].inc) } : '', Object.assign({ fmt: '#,##0' }, B4));
+  set('H4', sel >= 0 ? { formula: `IFERROR((MAX(${incCells.join(',')})-G4)/MAX(${incCells.join(',')}),0)`, result: maxInc ? (maxInc - T[sel].inc) / maxInc : 0 } : '', Object.assign({ fmt: '0%' }, B4));
+  // Dòng 5: comment
+  ws.mergeCells(`A5:${lastCol}5`);
+  set('A5', 'Comment:   ' + (I.comment || ''), { font: { bold: true }, align: { horizontal: 'left' } });
+  ws.getRow(5).height = Math.max(30, 15 * Math.ceil(((I.comment || '').length + 12) / 150) + 15 * ((I.comment || '').split('\n').length - 1));
+  // Dòng 6-7: tiêu đề bảng
+  ws.mergeCells('A6:B6'); set('A6', 'UNIT PRICE COMPARISION ', { font: { bold: true, color: { argb: 'FFFF0000' } }, align: { horizontal: 'left' } });
+  ws.getRow(6).height = 23;
+  const H7 = { font: { bold: true }, fill: 'FFF1F1F1', border: 1, align: { horizontal: 'center' } };
+  set('A7', 'STT', H7); set('B7', 'Hàng Hóa', H7); set('C7', 'Số lượng', H7); set('D7', 'ĐVT', H7);
+  S.sups.forEach((s, si) => {
+    const [u, a] = supCol(si);
+    ws.mergeCells(`${u}6:${a}6`);
+    set(`${u}6`, s.name, { font: { bold: true }, border: 1, align: { horizontal: 'center' }, fill: si === sel ? 'FFFFF2CC' : undefined });
+    set(`${u}7`, s.inclVat ? 'Đơn giá (VND)\nđã bao gồm VAT' : 'Đơn giá (VND)\nchưa bao gồm VAT', H7);
+    set(`${a}7`, 'Thành Tiền (đã bao gồm VAT)', H7);
+  });
+  ws.getRow(7).height = 42;
+  // Dòng hàng
+  S.rows.forEach((r, k) => {
+    const R = first + k;
+    const pres = S.sups.map((_, si) => cellPre(si, r.cells[si]));
+    const valid = pres.filter(p => p !== null && p > 0), min = valid.length > 1 ? Math.min(...valid) : null;
+    set('A' + R, k + 1, { border: 1, align: { horizontal: 'center' } });
+    set('B' + R, r.name, { border: 1, align: { horizontal: 'left' } });
+    set('C' + R, num(r.qty) ?? 0, { border: 1, align: { horizontal: 'center' } });
+    set('D' + R, r.unit, { border: 1, align: { horizontal: 'center' } });
+    S.sups.forEach((s, si) => {
+      const [u, a] = supCol(si), c = r.cells[si];
+      const vat = c ? (c.vat ?? s.vat) : s.vat;
+      const best = min !== null && pres[si] !== null && Math.abs(pres[si] - min) < 0.5;
+      set(u + R, c && c.price !== null ? c.price : null, { border: 1, fmt: NUM, align: { horizontal: 'center' }, fill: best ? 'FFE2EFDA' : undefined });
+      const amt = cellAmt(si, r) || 0;
+      const formula = s.inclVat ? `${u}${R}*C${R}` : `${u}${R}*C${R}*${100 + vat}%`;
+      set(a + R, { formula, result: Math.round(amt) }, { border: 1, fmt: NUM, align: { horizontal: 'right' } });
+      if (c && c.qty !== undefined && c.qty !== null && num(r.qty) !== c.qty) ws.getCell(u + R).note = `NCC báo số lượng ${c.qty}`;
+    });
+    ws.getRow(R).height = r.name.length > 48 ? 27 : 18;
+  });
+  // Tổng
+  [[rPre, 'TỔNG TIỀN CHƯA VAT (VND)', 'pre'], [rVat, 'THUẾ VAT (VND)', 'vat'], [rInc, 'TỔNG TIỀN (VND)', 'inc']].forEach(([R, l, key]) => {
+    ws.mergeCells(`A${R}:D${R}`); set('A' + R, l, { font: { bold: true }, border: 1, align: { horizontal: 'center' } });
+    S.sups.forEach((s, si) => {
+      const [u, a] = supCol(si);
+      ws.mergeCells(`${u}${R}:${a}${R}`);
+      let f;
+      if (key === 'inc') f = `SUM(${a}${first}:${a}${last})`;
+      else if (key === 'pre') f = s.inclVat
+        ? S.rows.map((r, k) => `${u}${first + k}*C${first + k}/${100 + (r.cells[si] ? (r.cells[si].vat ?? s.vat) : s.vat)}%`).join('+') || '0'
+        : `SUMPRODUCT(C${first}:C${last},${u}${first}:${u}${last})`;
+      else f = `ROUND(${u}${rInc}-${u}${rPre},0)`;
+      set(u + R, { formula: f, result: Math.round(T[si][key]) }, { font: { bold: true }, border: 1, fmt: NUM, align: { horizontal: 'center' }, fill: key === 'inc' && si === sel ? 'FFFFF2CC' : undefined });
+    });
+    ws.getRow(R).height = 18;
+  });
+  // Điều khoản
+  TERMS.forEach(([k, l], j) => {
+    const R = rInc + 1 + j;
+    ws.mergeCells(`A${R}:D${R}`); set('A' + R, l, { font: { bold: true }, border: 1, align: { horizontal: 'left' } });
+    let maxLen = 0;
+    S.sups.forEach((s, si) => { const [u, a] = supCol(si); ws.mergeCells(`${u}${R}:${a}${R}`); set(u + R, s.terms[k] || '', { border: 1, align: { horizontal: 'center' } }); maxLen = Math.max(maxLen, (s.terms[k] || '').length); });
+    ws.getRow(R).height = Math.max(18, 14 * Math.ceil(maxLen / 42));
+  });
+  ws.pageSetup.printArea = `A1:${lastCol}${rInc + TERMS.length}`;
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const a = document.createElement('a');
+  const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  a.href = URL.createObjectURL(blob);
+  a.download = ('So_sanh_bao_gia_' + (I.project || I.goods || 'NCC').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').replace(/[^A-Za-z0-9]+/g, '_').slice(0, 50) + '_' + stamp + '.xlsx').replace(/_+/g, '_');
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('Đã xuất ' + a.download);
+}
+
+renderInfo(); render();
+})();
+</script>
+</body>
+</html>
