@@ -1,0 +1,8 @@
+# Netlify tự chạy khi có push lên git: cài thư viện theo package-lock (npm ci) rồi build ra dist/.
+# Security headers (CSP...) được build.js sinh ra trong dist/_headers vì CSP chứa hash của script.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"

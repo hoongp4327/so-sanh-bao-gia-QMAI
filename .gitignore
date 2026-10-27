@@ -1,4 +1,5 @@
 node_modules/
+dist/
 # Không đưa báo giá thật (dữ liệu nội bộ) lên git
 *.pdf
 *.xlsx

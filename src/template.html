@@ -2,8 +2,11 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
+<!--CSP-->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>So sánh báo giá</title>
+<meta name="description" content="So sánh báo giá nhà cung cấp từ file PDF/Excel, chạy hoàn toàn trong trình duyệt">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f5fbf'/%3E%3Cpath d='M8 22h4V14H8zm6 0h4V9h-4zm6 0h4V17h-4z' fill='%23fff'/%3E%3C/svg%3E">
 <style>
 :root{
   --bg:#f5f6f8; --panel:#fff; --ink:#1d2330; --muted:#667085; --line:#d9dde4; --line2:#eceef2;
@@ -92,6 +95,7 @@ details.help summary{cursor:pointer;color:var(--accent)}
   <button id="btnManual">+ NCC nhập tay</button>
   <span class="loading" id="loading">Đang đọc file…</span>
   <span class="sp"></span>
+  <a id="lnkOffline" href="So_sanh_bao_gia.html" download hidden><button type="button" tabindex="-1">⤓ Tải bản offline</button></a>
   <button id="btnReset">Làm phiên mới</button>
   <button class="primary" id="btnExport">⤓ Xuất Excel</button>
   <input type="file" id="file" accept=".pdf,.xlsx" multiple hidden>
@@ -143,14 +147,15 @@ details.help summary{cursor:pointer;color:var(--accent)}
 </main>
 <div class="toast" id="toast"></div>
 
-<script>/*LIB_PDF*/</script>
-<script>/*LIB_PDF_WORKER*/</script>
+<script type="module">/*LIB_PDF_WORKER*/</script>
+<script type="module">/*LIB_PDF*/</script>
 <script>/*LIB_EXCEL*/</script>
 <script>/*PARSER*/</script>
 <script>
 (function(){
 'use strict';
 const MAX_SUP = 8;
+const MAX_FILE_MB = 25;
 const STORE = 'so-sanh-bao-gia-v1';
 const $ = s => document.querySelector(s);
 const fmt = n => (n === null || n === undefined || n === '' || isNaN(n)) ? '' : Math.round(n).toLocaleString('en-US');
@@ -188,7 +193,7 @@ function selectedIndex(T){
 
 // ---------- đọc file ----------
 async function pdfPages(buf){
-  const doc = await pdfjsLib.getDocument({ data: buf, disableFontFace: true, isEvalSupported: false }).promise;
+  const doc = await pdfjsLib.getDocument({ data: buf, disableFontFace: true, isEvalSupported: false, enableXfa: false, useWorkerFetch: false, useSystemFonts: false }).promise;
   const pages = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const tc = await (await doc.getPage(p)).getTextContent();
@@ -220,6 +225,9 @@ async function xlsxPages(buf){
 async function addFiles(files){
   files = [...files].filter(f => /\.(pdf|xlsx)$/i.test(f.name));
   if (!files.length) { toast('Chỉ nhận file .pdf hoặc .xlsx'); return; }
+  const big = files.filter(f => f.size > MAX_FILE_MB * 1024 * 1024);
+  if (big.length) { toast('Bỏ qua file lớn hơn ' + MAX_FILE_MB + ' MB: ' + big.map(f => f.name).join(', '), 6000); files = files.filter(f => !big.includes(f)); if (!files.length) return; }
+  if (!window.pdfjsLib) { toast('Trang chưa tải xong, thử lại sau giây lát'); return; }
   $('#loading').classList.add('on');
   for (const f of files) {
     if (S.sups.length >= MAX_SUP) { toast('Tối đa ' + MAX_SUP + ' NCC mỗi lần so sánh'); break; }
@@ -599,6 +607,9 @@ async function exportXlsx(){
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast('Đã xuất ' + a.download);
 }
+
+// Bản web có nút tải file HTML về dùng offline; khi đang mở file offline thì ẩn đi
+if (location.protocol === 'http:' || location.protocol === 'https:') $('#lnkOffline').hidden = false;
 
 renderInfo(); render();
 })();
